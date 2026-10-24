@@ -2,7 +2,9 @@
 
 ## Voraussetzungen
 
-Der Betreiber stellt einen aktivierten MCP-Endpunkt und einen persönlichen bzw. vereinbarten Zugangsschlüssel bereit.
+Der neue Entwicklerbereich unter https://foodzwerge.de/dev ist im Anwendungsbranch vorbereitet; seine öffentliche Bereitstellung ist noch nicht bestätigt. Nach Deployment kannst du dich registrieren, deine E-Mail bestätigen und einen persönlichen Leseschlüssel erzeugen. Checkout-Zugriff erfordert eine Projektfreigabe und einen dafür ausgestellten Schlüssel.
+
+Bis zur Bereitstellung stellt der Betreiber einen aktivierten Testendpunkt und einen vereinbarten Zugang bereit.
 Die öffentliche Adresse https://foodzwerge.de/mcp ist vorgesehen, ihre Bereitstellung ist noch nicht bestätigt.
 Für lokale Tests ist beispielsweise https://justdeliver4.test/mcp geeignet, wenn dieser Host auf deinem Rechner eingerichtet ist.
 
@@ -16,7 +18,7 @@ Dieses Kit enthält keine plattformspezifische ChatGPT- oder Claude-Konfiguratio
 - Header: Authorization: Bearer <dein Schlüssel>
 - Protokoll: 2025-06-18
 
-Es gibt aktuell keinen OAuth-Flow und keine Registrierung unter /dev/api-key.
+Es gibt keinen OAuth-Flow. Die geplante Registrierung läuft über /dev/registrieren, die Schlüsselverwaltung über /dev/dashboard; /dev/api-key existiert nicht.
 Ein Client, der zwingend OAuth verlangt, kann diese Version nicht auf diesem Weg verbinden.
 Keinen Betreiber-Schlüssel in Browsercode, öffentliche GPT-Anweisungen oder dieses Repository kopieren.
 
