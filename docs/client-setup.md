@@ -2,7 +2,7 @@
 
 ## Voraussetzungen
 
-Der neue Entwicklerbereich unter https://foodzwerge.de/dev ist im Anwendungsbranch vorbereitet; seine öffentliche Bereitstellung ist noch nicht bestätigt. Nach Deployment kannst du dich registrieren, deine E-Mail bestätigen und einen persönlichen Leseschlüssel erzeugen. Checkout-Zugriff erfordert eine Projektfreigabe und einen dafür ausgestellten Schlüssel.
+Der Entwicklerbereich ist lokal umgesetzt. https://foodzwerge.de/dev ist noch nicht deployed. Details zu Registrierung, Rechten und Status findest du unter [Entwicklerzugang](developer-access.md). Nach Deployment kannst du dich registrieren, deine E-Mail bestätigen und einen persönlichen Leseschlüssel erzeugen. Checkout-Zugriff erfordert eine Projektfreigabe und einen dafür ausgestellten Schlüssel.
 
 Bis zur Bereitstellung stellt der Betreiber einen aktivierten Testendpunkt und einen vereinbarten Zugang bereit.
 Die öffentliche Adresse https://foodzwerge.de/mcp ist vorgesehen, ihre Bereitstellung ist noch nicht bestätigt.
@@ -18,7 +18,7 @@ Dieses Kit enthält keine plattformspezifische ChatGPT- oder Claude-Konfiguratio
 - Header: Authorization: Bearer <dein Schlüssel>
 - Protokoll: 2025-06-18
 
-Es gibt keinen OAuth-Flow. Die geplante Registrierung läuft über /dev/registrieren, die Schlüsselverwaltung über /dev/dashboard; /dev/api-key existiert nicht.
+Es gibt keinen OAuth-Flow. Die Registrierung läuft über /dev/registrieren, die Schlüsselverwaltung über /dev/dashboard; /dev/api-key existiert nicht.
 Ein Client, der zwingend OAuth verlangt, kann diese Version nicht auf diesem Weg verbinden.
 Keinen Betreiber-Schlüssel in Browsercode, öffentliche GPT-Anweisungen oder dieses Repository kopieren.
 
@@ -50,7 +50,7 @@ Diese Kennung ersetzt niemals die Authentifizierung.
 | Ergebnis | Bedeutung |
 |---|---|
 | 404 | MCP deaktiviert; kann auch von Routing/Proxy stammen |
-| 401 | Token fehlt oder ist falsch |
+| 401 | Token fehlt, ist falsch, abgelaufen oder gesperrt; auch E-Mail-Bestätigung und Kontostatus prüfen |
 | 403 | Host oder mitgesendeter Origin nicht erlaubt; auch vorgeschaltete Sperren prüfen |
 | 406 | Accept-Header unvollständig |
 | 413 | Anfrage zu groß |
@@ -61,3 +61,19 @@ Diese Kennung ersetzt niemals die Authentifizierung.
 
 Ein HTTP-200 allein bedeutet nicht, dass ein Werkzeug erfolgreich war.
 Vor der Nutzung immer JSON-RPC error und result.isError prüfen.
+
+## Lokales TLS und PowerShell
+
+Für Node mit Laragon vor dem Start setzen:
+
+```powershell
+$env:NODE_EXTRA_CA_CERTS = "C:\laragon\etc\ssl\laragon.crt"
+```
+
+Der Pfad muss zu deinem lokalen Zertifikat passen. Node nach dem Setzen neu starten. Bei Python kann die vertrauenswürdige CA über `SSL_CERT_FILE` angegeben werden. Die Zertifikatsprüfung bleibt aktiv.
+
+`Read-Host "Text"` zeigt nur eine Eingabeaufforderung; der Schlüssel wird erst danach eingegeben. Die PowerShell-Anleitung im [README](../README.md) vermeidet Klartext in der Befehlszeile.
+
+## Erwartetes Ergebnis
+
+Ein Leseschlüssel liefert genau `find_shops`, `shop_context` und `search_menu`. Nach Projektfreigabe erzeugst du einen neuen Schlüssel mit Checkout-Rechten: Dann kommen `validate_cart` und `create_checkout_handoff` dazu. Die Beispielscripte selbst erzeugen keinen Checkout.
