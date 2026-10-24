@@ -2,11 +2,12 @@
 
 Restaurants finden, Speisekarten durchsuchen und einen Warenkorb für den Kunden vorbereiten – mit MCP.
 
-**Stand: 24. Oktober 2026 · frühe Integration (0.1).** Die serverseitigen Laravel-Tests wurden lokal erfolgreich ausgeführt. Ein Test mit einem unabhängigen MCP-Client und die öffentliche Bereitstellung stehen noch aus. Dieses Repository betreibt keinen Server.
+**Stand: 24. Oktober 2026 · frühe Integration (0.1).** Der lokale MCP-Verbindungstest mit dem JavaScript-Client funktioniert. Persönliche Leseschlüssel liefern drei Werkzeuge; Warenkorbprüfung und Checkout-Handoff wurden lokal ebenfalls erfolgreich ausgeführt. Die öffentliche Bereitstellung steht noch aus. Dieses Repository betreibt keinen Server.
 
 ## Was das Kit enthält
 
 - [Werkzeugschemas](schemas/tools.json)
+- [Entwicklerkonto und Freigaben](docs/developer-access.md)
 - [Client einrichten](docs/client-setup.md)
 - [Bestellablauf und Argumente](docs/ordering-flow.md)
 - [Verhaltensregeln für Agenten](docs/agent-instructions.md)
@@ -19,10 +20,10 @@ Restaurants finden, Speisekarten durchsuchen und einen Warenkorb für den Kunden
 | Vorgesehener Produktionsendpunkt | `https://foodzwerge.de/mcp` — noch nicht als öffentlich verfügbar bestätigt |
 | Transport | Stateless Streamable HTTP mit JSON-Antworten |
 | MCP-Protokoll | `2025-06-18` |
-| Anmeldung | Persönlicher Bearer-Schlüssel (Entwicklerportal in Vorbereitung) |
+| Anmeldung | Persönlicher Bearer-Schlüssel aus dem Entwicklerportal |
 | Automatische Bestellung / Zahlung | Nicht unterstützt; Kunde bestätigt im Checkout |
 
-Der Entwicklerbereich unter `https://foodzwerge.de/dev` ist im Anwendungsbranch vorbereitet und noch nicht als öffentlich bereitgestellt bestätigt. Nach Deployment: registrieren, E-Mail bestätigen und einen Leseschlüssel erzeugen. Warenkorbprüfung und Checkout-Handoff benötigen zusätzlich eine Projektfreigabe.
+Der Entwicklerbereich ist lokal umgesetzt und getestet. `https://foodzwerge.de/dev` ist als öffentliche Adresse vorgesehen, aber noch nicht deployed. Nach Deployment: registrieren, E-Mail bestätigen und einen Leseschlüssel erzeugen. Warenkorbprüfung und Checkout-Handoff benötigen zusätzlich eine Projektfreigabe.
 
 Kein OAuth und kein öffentlicher Demo-Schlüssel in dieser Version.
 Ein Client muss benutzerdefinierte Authorization-Header unterstützen. Ein Prompt allein richtet keine Verbindung ein.
@@ -42,16 +43,19 @@ Die Schemas sind maßgeblich. Insbesondere unterscheiden sich die Positionen bei
 
 ## Lokal ausprobieren
 
-Voraussetzung: Der Betreiber hat einen erreichbaren Testendpunkt aktiviert und dir einen Token gegeben.
+Voraussetzung: Ein erreichbarer Testendpunkt und ein persönlicher Schlüssel aus dessen Entwicklerportal. `justdeliver4.test` funktioniert ausschließlich auf einem entsprechend eingerichteten lokalen Rechner.
 Setze `FOODZWERGE_MCP_URL` und `FOODZWERGE_MCP_TOKEN` in deiner Umgebung.
 
 PowerShell-Beispiel für die URL:
 
 ```powershell
 $env:FOODZWERGE_MCP_URL = "https://justdeliver4.test/mcp"
-# FOODZWERGE_MCP_TOKEN separat mit deinem lokalen Schlüssel setzen.
-node examples/javascript/client.mjs
-python examples/python/client.py
+# Optional bei Laragon: Pfad zu deinem vertrauenswürdigen lokalen Zertifikat.
+$env:NODE_EXTRA_CA_CERTS = "C:\laragon\etc\ssl\laragon.crt"
+$secureToken = Read-Host "Entwicklerschlüssel eingeben" -AsSecureString
+$env:FOODZWERGE_MCP_TOKEN = [System.Net.NetworkCredential]::new("", $secureToken).Password
+node examples/javascript/client.mjs --city Edemissen
+# Alternativ: python examples/python/client.py --city Edemissen
 ```
 
 Die Beispiele initialisieren MCP und listen Werkzeuge. Mit `--city Edemissen` führen sie zusätzlich eine Shopsuche für Abholung aus. Sie erzeugen weder Checkout-Sitzungen noch Bestellungen.
@@ -67,6 +71,8 @@ Node.js 22 oder neuer, Python 3.10 oder neuer. Keine externen Laufzeit-Abhängig
 npm test
 python -m unittest discover -s tests -p "test_*.py"
 ```
+
+GitHub Actions führt diese Tests bei Pushes und Pull Requests ohne API-Schlüssel aus. Du kannst sie direkt nach dem Klonen starten; es ist kein Foodzwerge-Konto nötig.
 
 Diese Tests verwenden ausschließlich einen lokalen Mock-Server. Sie bestätigen die Beispiele und Schemas, nicht die öffentliche Bereitstellung oder vollständige MCP-Konformität.
 
