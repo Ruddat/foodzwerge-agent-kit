@@ -19,10 +19,12 @@ Restaurants finden, Speisekarten durchsuchen und einen Warenkorb für den Kunden
 | Vorgesehener Produktionsendpunkt | `https://foodzwerge.de/mcp` — noch nicht als öffentlich verfügbar bestätigt |
 | Transport | Stateless Streamable HTTP mit JSON-Antworten |
 | MCP-Protokoll | `2025-06-18` |
-| Anmeldung | Manuell bereitgestellter Bearer-Token |
+| Anmeldung | Persönlicher Bearer-Schlüssel (Entwicklerportal in Vorbereitung) |
 | Automatische Bestellung / Zahlung | Nicht unterstützt; Kunde bestätigt im Checkout |
 
-Kein OAuth, keine automatische Schlüsselvergabe und kein öffentlicher Demo-Schlüssel in dieser Version.
+Der Entwicklerbereich unter `https://foodzwerge.de/dev` ist im Anwendungsbranch vorbereitet und noch nicht als öffentlich bereitgestellt bestätigt. Nach Deployment: registrieren, E-Mail bestätigen und einen Leseschlüssel erzeugen. Warenkorbprüfung und Checkout-Handoff benötigen zusätzlich eine Projektfreigabe.
+
+Kein OAuth und kein öffentlicher Demo-Schlüssel in dieser Version.
 Ein Client muss benutzerdefinierte Authorization-Header unterstützen. Ein Prompt allein richtet keine Verbindung ein.
 
 ## Werkzeuge
