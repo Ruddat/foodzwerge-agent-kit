@@ -1,28 +1,51 @@
 # Client einrichten
 
-## Voraussetzungen
+Dieses Kit verbindet deine Anwendung mit dem von Foodzwerge betriebenen Dienst. Eine eigene Installation der Bestellsoftware ist nicht erforderlich.
 
-Der Entwicklerbereich ist lokal umgesetzt. https://foodzwerge.de/dev ist noch nicht deployed. Details zu Registrierung, Rechten und Status findest du unter [Entwicklerzugang](developer-access.md). Nach Deployment kannst du dich registrieren, deine E-Mail bestätigen und einen persönlichen Leseschlüssel erzeugen. Checkout-Zugriff erfordert eine Projektfreigabe und einen dafür ausgestellten Schlüssel.
+> Der öffentliche Dienst ist noch nicht als freigeschaltet bestätigt. Verwende die folgenden Einstellungen, sobald dein Entwicklerzugang auf foodzwerge.de verfügbar ist.
 
-Bis zur Bereitstellung stellt der Betreiber einen aktivierten Testendpunkt und einen vereinbarten Zugang bereit.
-Die öffentliche Adresse https://foodzwerge.de/mcp ist vorgesehen, ihre Bereitstellung ist noch nicht bestätigt.
-Für lokale Tests ist beispielsweise https://justdeliver4.test/mcp geeignet, wenn dieser Host auf deinem Rechner eingerichtet ist.
+## Zugang und Einstellungen
 
-Wähle einen MCP-Client mit Streamable HTTP und Unterstützung für einen manuell konfigurierten Authorization-Header.
-Dieses Kit enthält keine plattformspezifische ChatGPT- oder Claude-Konfiguration: Die Kompatibilität muss zunächst mit dem jeweiligen Client geprüft werden.
+Registriere dich im [Entwicklerportal](https://foodzwerge.de/dev), bestätige deine E-Mail und erstelle einen Schlüssel. Details: [Entwicklerzugang](developer-access.md).
 
-## Allgemeine Einstellungen
+- URL: `https://foodzwerge.de/mcp`
+- Transport: Streamable HTTP mit JSON-Antworten
+- Header: `Authorization: Bearer <dein Schlüssel>`
+- Protokoll: `2025-06-18`
 
-- URL: dein aktivierter Endpunkt
-- Transport: Streamable HTTP (JSON-Antworten)
-- Header: Authorization: Bearer <dein Schlüssel>
-- Protokoll: 2025-06-18
+Der Client muss eigene Authorization-Header unterstützen. Es gibt keinen OAuth-Flow. Das Kit enthält keine bestätigte plattformspezifische ChatGPT- oder Claude-Konfiguration.
 
-Es gibt keinen OAuth-Flow. Die Registrierung läuft über /dev/registrieren, die Schlüsselverwaltung über /dev/dashboard; /dev/api-key existiert nicht.
-Ein Client, der zwingend OAuth verlangt, kann diese Version nicht auf diesem Weg verbinden.
-Keinen Betreiber-Schlüssel in Browsercode, öffentliche GPT-Anweisungen oder dieses Repository kopieren.
+## JavaScript
 
-## Ablauf auf Protokollebene
+Node.js 22 oder neuer, keine externen Abhängigkeiten. Die vollständigen PowerShell-Befehle stehen im [README](../README.md).
+
+Für Bash:
+
+```bash
+export FOODZWERGE_MCP_URL="https://foodzwerge.de/mcp"
+read -r -s -p "Entwicklerschlüssel: " FOODZWERGE_MCP_TOKEN
+echo
+export FOODZWERGE_MCP_TOKEN
+node examples/javascript/client.mjs --city Edemissen
+```
+
+## Python
+
+Python 3.10 oder neuer, keine externen Abhängigkeiten. Setze dieselben Umgebungsvariablen wie im JavaScript-Beispiel und führe aus:
+
+```sh
+python examples/python/client.py --city Edemissen
+```
+
+Die Beispiele lesen Prozess-Umgebungsvariablen. Eine Datei namens `.env` wird nicht automatisch geladen.
+
+## Erwartetes Ergebnis
+
+Ein Leseschlüssel liefert `find_shops`, `shop_context` und `search_menu`. Nach Projektfreigabe und Ausstellung eines Checkout-Schlüssels kommen `validate_cart` und `create_checkout_handoff` hinzu.
+
+Beide CLI-Beispiele initialisieren MCP, listen Werkzeuge und suchen optional Shops. Sie erzeugen keine Checkout-Sitzung und keine Bestellung. Die [geführte Tour](quickstart-tour.md) erklärt die Ausgabe.
+
+## MCP-Ablauf für eigene Clients
 
 1. POST initialize mit protocolVersion, capabilities und clientInfo.
 2. Antwortversion prüfen.
@@ -38,42 +61,24 @@ Accept: application/json, text/event-stream
 Authorization: Bearer <dein Schlüssel>
 ```
 
-Nach initialize zusätzlich: MCP-Protocol-Version: 2025-06-18.
-Der Server führt keine persistente MCP-Sitzung; es ist kein Mcp-Session-Id erforderlich.
-GET /mcp liefert 405, weil dieser Server keinen SSE-Empfangsstream anbietet. Ein Browseraufruf allein ist kein Funktionstest.
+Nach initialize zusätzlich: `MCP-Protocol-Version: 2025-06-18`.
 
-Optional kann X-Agent-Session-Id mit einer selbst erzeugten UUID die Statistik über mehrere Aufrufe verbinden.
-Diese Kennung ersetzt niemals die Authentifizierung.
+Der Server benötigt keine persistente MCP-Sitzung und keine Mcp-Session-Id. GET /mcp ist kein Funktionstest; der Transport verwendet POST. Optional verbindet X-Agent-Session-Id mit einer UUID mehrere Aufrufe in der Statistik. Diese Kennung ersetzt keine Authentifizierung.
 
-## Fehler
+## Fehler beheben
 
-| Ergebnis | Bedeutung |
+| Ergebnis | Prüfen |
 |---|---|
-| 404 | MCP deaktiviert; kann auch von Routing/Proxy stammen |
-| 401 | Token fehlt, ist falsch, abgelaufen oder gesperrt; auch E-Mail-Bestätigung und Kontostatus prüfen |
-| 403 | Host oder mitgesendeter Origin nicht erlaubt; auch vorgeschaltete Sperren prüfen |
-| 406 | Accept-Header unvollständig |
+| 404 | Dienst noch nicht freigeschaltet oder falsche URL |
+| 401 | Schlüssel, Ablauf, Sperrung, Kontostatus und E-Mail-Bestätigung |
+| 403 | Origin nicht erlaubt oder vorgeschaltete Serversperre; Foodzwerge informieren |
+| 405 bei Browseraufruf | MCP über den Client per POST aufrufen |
+| 406 | Accept-Header muss JSON und text/event-stream enthalten |
 | 413 | Anfrage zu groß |
-| 415 | Content-Type muss JSON sein |
-| 429 | Rate-Limit erreicht |
-| 503 | Server-Schlüssel nicht korrekt konfiguriert |
-| result.isError = true | Werkzeugfehler; Nachricht lesen und Argumente oder Auswahl korrigieren |
+| 415 | Content-Type muss application/json sein |
+| 429 | Anfragebegrenzung erreicht; Retry-After beachten |
+| 503 | Dienstkonfiguration benötigt Prüfung durch Foodzwerge |
+| result.isError = true | Werkzeugmeldung lesen; Argumente oder Berechtigung prüfen |
+| fetch failed | Erreichbarkeit und TLS prüfen; niemals Zertifikatsprüfung abschalten |
 
-Ein HTTP-200 allein bedeutet nicht, dass ein Werkzeug erfolgreich war.
-Vor der Nutzung immer JSON-RPC error und result.isError prüfen.
-
-## Lokales TLS und PowerShell
-
-Für Node mit Laragon vor dem Start setzen:
-
-```powershell
-$env:NODE_EXTRA_CA_CERTS = "C:\laragon\etc\ssl\laragon.crt"
-```
-
-Der Pfad muss zu deinem lokalen Zertifikat passen. Node nach dem Setzen neu starten. Bei Python kann die vertrauenswürdige CA über `SSL_CERT_FILE` angegeben werden. Die Zertifikatsprüfung bleibt aktiv.
-
-`Read-Host "Text"` zeigt nur eine Eingabeaufforderung; der Schlüssel wird erst danach eingegeben. Die PowerShell-Anleitung im [README](../README.md) vermeidet Klartext in der Befehlszeile.
-
-## Erwartetes Ergebnis
-
-Ein Leseschlüssel liefert genau `find_shops`, `shop_context` und `search_menu`. Nach Projektfreigabe erzeugst du einen neuen Schlüssel mit Checkout-Rechten: Dann kommen `validate_cart` und `create_checkout_handoff` dazu. Die Beispielscripte selbst erzeugen keinen Checkout.
+Ein HTTP-200 allein bedeutet keinen Werkzeugerfolg. Immer JSON-RPC error und result.isError prüfen. Bei Fragen ein [Issue](https://github.com/Ruddat/foodzwerge-agent-kit/issues) ohne Zugangsschlüssel erstellen.
