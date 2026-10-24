@@ -1,14 +1,14 @@
 # Entwicklerzugang und Projektfreigabe
 
-Das Entwicklerportal ist lokal umgesetzt. Die öffentliche Bereitstellung auf foodzwerge.de steht noch aus. Lokale Konten und Schlüssel werden nicht automatisch in eine andere Installation übertragen.
+Der Entwicklerzugang wird von Foodzwerge bereitgestellt. Eine eigene Installation der Serversoftware ist nicht erforderlich. Die öffentliche Freischaltung auf foodzwerge.de ist noch nicht bestätigt.
 
 ## Zugang erhalten
 
-1. Öffne `/dev/registrieren` auf der verwendeten Foodzwerge-Installation.
+1. Öffne nach Freischaltung [die Registrierung](https://foodzwerge.de/dev/registrieren).
 2. Registriere dein Entwicklerkonto und bestätige die E-Mail-Adresse.
 3. Erstelle unter `/dev/dashboard` einen persönlichen Leseschlüssel.
 4. Kopiere ihn sofort in die lokale Konfiguration deiner Anwendung. Der vollständige Schlüssel wird nur einmal angezeigt.
-5. Verbinde den Client mit dem MCP-Endpunkt derselben Installation.
+5. Verbinde den Client mit `https://foodzwerge.de/mcp`.
 
 ## Rechte
 
@@ -44,4 +44,4 @@ Die Freigabe ist keine Bestellung. Erst der Kunde bestätigt seinen Warenkorb im
 
 `npm test` und die Python-Tests laufen gegen lokale Mock-Server, ohne Konto und ohne Schlüssel. Sie erzeugen keine Restaurantbestellung. Ein echter Verbindungstest benötigt einen erreichbaren aktivierten MCP-Endpunkt und einen Schlüssel von dessen Installation.
 
-Die Schlüssel werden serverseitig gehasht gespeichert. Das öffentliche Agent Kit enthält weder JD4-Anwendungsquellcode noch Zugangsdaten.
+Die Schlüssel werden serverseitig gehasht gespeichert. Das öffentliche Agent Kit enthält Integrationsbeispiele und keine Serversoftware oder Zugangsdaten.
