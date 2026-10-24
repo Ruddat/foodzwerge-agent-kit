@@ -1,0 +1,391 @@
+[
+  {
+    "name": "find_shops",
+    "description": "Findet aktive Foodzwerge-Shops für einen Ort. Mindestens postal_code oder city ist erforderlich. Liefert direkte Shop-URLs; verwende anschließend dessen slug in shop_context, um dessen Speisekarte zu durchsuchen und einen Checkout vorzubereiten.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "postal_code": {
+          "type": "string",
+          "description": "Deutsche Postleitzahl des Kunden oder gewünschten Abholorts.",
+          "pattern": "^[0-9]{5}$"
+        },
+        "city": {
+          "type": "string",
+          "description": "Ort des Kunden oder gewünschter Abholort.",
+          "maxLength": 120
+        },
+        "query": {
+          "type": "string",
+          "description": "Optionaler Shop-, Küchen- oder Essenswunsch, zum Beispiel Pizza.",
+          "maxLength": 120
+        },
+        "order_type": {
+          "type": "string",
+          "enum": [
+            "delivery",
+            "pickup"
+          ],
+          "description": "Optional: Lieferung oder Abholung."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 5
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true
+    }
+  },
+  {
+    "name": "shop_context",
+    "description": "Liefert verbindliche Informationen und Bestellmöglichkeiten des über shop_slug ausgewählten Foodzwerge-Shops. Nutze dieses Werkzeug zuerst.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "shop_slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9_-]+$",
+          "description": "Shop slug returned by find_shops."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "shop_slug"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true
+    }
+  },
+  {
+    "name": "search_menu",
+    "description": "Durchsucht die echte Speisekarte des über shop_slug ausgewählten Foodzwerge-Shops und liefert Varianten, Preise, Verfügbarkeit sowie zulässige Extras.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Gericht, Zutat oder Kategorie, zum Beispiel Pizza Salami.",
+          "maxLength": 120
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Maximale Trefferzahl zwischen 1 und 25.",
+          "minimum": 1,
+          "maximum": 25,
+          "default": 10
+        },
+        "shop_slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9_-]+$",
+          "description": "Shop slug returned by find_shops."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "shop_slug"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true
+    }
+  },
+  {
+    "name": "validate_cart",
+    "description": "Prüft einen geplanten Warenkorb verbindlich mit der JD4-Logik: Produkte, Varianten, Optionen, Liefergebiet, Mindestbestellwert und Gebühren. Löst keine Bestellung aus.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "shop_slug",
+        "order_type",
+        "items"
+      ],
+      "properties": {
+        "order_type": {
+          "type": "string",
+          "enum": [
+            "delivery",
+            "pickup"
+          ]
+        },
+        "delivery_address": {
+          "type": "object",
+          "properties": {
+            "postal_code": {
+              "type": "string",
+              "pattern": "^[0-9]{5}$"
+            },
+            "city": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "district": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "lat": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "lng": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            }
+          },
+          "additionalProperties": false
+        },
+        "payment_method": {
+          "type": "string",
+          "enum": [
+            "cash",
+            "card",
+            "paypal"
+          ]
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "required": [
+              "type",
+              "quantity"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "product",
+                  "menu"
+                ]
+              },
+              "variant_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "menu_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "quantity": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 99
+              },
+              "extras": {
+                "type": "array",
+                "description": "Optionen eines Produkts, zum Beispiel Käserand. Verwende die IDs aus foodzwerge_search_menu.",
+                "maxItems": 100,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "quantity": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 99,
+                      "default": 1
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "choices": {
+                "type": "array",
+                "description": "Auswahlen für Menü-Bestandteile; nicht für Produkt-Extras verwenden.",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "choice_group_id",
+                    "variant_id",
+                    "quantity"
+                  ],
+                  "properties": {
+                    "choice_group_id": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "variant_id": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "quantity": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 99
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "maxItems": 100
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "shop_slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9_-]+$",
+          "description": "Shop slug returned by find_shops."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true
+    }
+  },
+  {
+    "name": "create_checkout_handoff",
+    "description": "Erstellt nach erfolgreicher Auswahl einen zeitlich begrenzten Foodzwerge-Checkout-Link. Der Kunde muss ihn öffnen, Warenkorb und Gesamtpreis prüfen und die Bestellung selbst bestätigen. Dieses Werkzeug bestellt und bezahlt niemals automatisch.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "shop_slug",
+        "order_type",
+        "items"
+      ],
+      "properties": {
+        "order_type": {
+          "type": "string",
+          "enum": [
+            "delivery",
+            "pickup"
+          ]
+        },
+        "requested_fulfillment_at": {
+          "type": "string",
+          "description": "Optionaler Vorbestellzeitpunkt als ISO-8601."
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "required": [
+              "quantity"
+            ],
+            "properties": {
+              "item_type": {
+                "type": "string",
+                "enum": [
+                  "product",
+                  "menu"
+                ]
+              },
+              "product_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "variant_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "menu_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "quantity": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 999
+              },
+              "extras": {
+                "type": "array",
+                "description": "Optionen eines Produkts, zum Beispiel Käserand. Verwende die IDs aus foodzwerge_search_menu.",
+                "maxItems": 100,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "quantity": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 99,
+                      "default": 1
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "selections": {
+                "type": "array",
+                "maxItems": 50,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "group_index",
+                    "choices"
+                  ],
+                  "properties": {
+                    "group_index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "choices": {
+                      "type": "array",
+                      "maxItems": 100,
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "variant_id"
+                        ],
+                        "properties": {
+                          "variant_id": {
+                            "type": "integer",
+                            "minimum": 1
+                          },
+                          "quantity": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 99
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "shop_slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9_-]+$",
+          "description": "Shop slug returned by find_shops."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  }
+]
